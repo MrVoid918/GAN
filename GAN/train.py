@@ -10,7 +10,7 @@ import torch.optim as optim
 from norm import Norm
 from generator import Generator
 from discriminator import Discriminator
-from VAEtrain import trainVAE
+from VAEtrain import train_VAE
 
 def parse_args():
     parser = ArgumentParser(prog="GAN")
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     
     if args.pretrain:
         G, dec = train_VAE(args.img_size, args.norm, args.up_type,
-                           device, dataloader, args.lr)
+                           device, data_loader, args.G_lr, args.epoch)
                            
     else:
         G = Generator(args.img_size, args.norm, args.up_type, device).to(device)

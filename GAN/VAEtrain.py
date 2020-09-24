@@ -2,13 +2,15 @@ import torch
 from utils import reparamaterize
 import torch.optim as optim
 from loss import VAELoss
-from init import weightS_init
+from init import weights_init
+from generator import Generator
+from VAE import Encoder
 
 def train_VAE(img_size : int, norm : str, up : str, device : str,
-              data_loader, lr : float)
+              data_loader, lr : float, num_epoch : int):
     
-    enc = Generator(img_size, norm, up_type, device).to(device)
-    dec = Decoder(img_size, norm).to(device)
+    dec = Generator(img_size, norm, up, device).to(device)
+    enc = Encoder(img_size, norm).to(device)
     
     enc.apply(weights_init)
     dec.apply(weights_init)
@@ -29,7 +31,8 @@ def train_VAE(img_size : int, norm : str, up : str, device : str,
             
             img = data[0].to(device)
             mu, var = enc(img)
-            z = reparamaterize(mu, var)
+            bs = mu.shape[0]
+            z = reparamaterize(mu, var).view(bs, -1, 1, 1)
             recon_img = dec(z)
             
             recons_loss, kld_loss = VAELoss(recon_img, img, mu, var)
@@ -43,7 +46,7 @@ def train_VAE(img_size : int, norm : str, up : str, device : str,
         
                 
         print("[Epoch %d/%d] [Reconstruction loss: %f] [KL Divergence loss: %f]"
-                % (epoch_, num_epoch, total_recon_loss, total_kld_loss)
+                % (epoch, num_epoch, total_recon_loss, total_kld_loss)
                 )
                 
     return enc, dec
