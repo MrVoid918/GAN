@@ -10,6 +10,7 @@ import torch.optim as optim
 from norm import Norm
 from generator import Generator
 from discriminator import Discriminator
+from VAEtrain import trainVAE
 
 def parse_args():
     parser = ArgumentParser(prog="GAN")
@@ -24,8 +25,9 @@ def parse_args():
     parser.add_argument("--loss", type=str, default="adv", choices = Loss.losses.keys(), help="Loss Function")
     parser.add_argument("--device", type=str, default="cpu", choices = ["cpu", "gpu"], help="Device to run on. Defaults on cpu. gpu:0")
     parser.add_argument("--epoch", type=int, default=100, help="Training epochs")
-    parser.add_argument("--G_lr", type=float, default=0.002, help="Generator Learning Rate")
-    parser.add_argument("--D_lr", type=float, default=0.002, help="Discriminator Learning Rate")
+    parser.add_argument("--G_lr", type=float, default=0.0002, help="Generator Learning Rate")
+    parser.add_argument("--D_lr", type=float, default=0.0002, help="Discriminator Learning Rate")
+    parser.add_argument("-p", "--pretrain", type=bool, default=0, help="Pretrain with VAE")
     #arser.add_argument("--save_dir", type=str, required=1, help = "Directory for saved Model")
 
     return parser.parse_args()
@@ -99,9 +101,16 @@ if __name__ == "__main__":
         device = torch.device("cpu")
     
     data_loader = load_data(args.img_dir, args.img_size, args.batch_size)
-    G = Generator(args.img_size, args.norm, args.up_type, device).to(device)
+    
+    if args.pretrain:
+        G, dec = train_VAE(args.img_size, args.norm, args.up_type,
+                           device, dataloader, args.lr)
+                           
+    else:
+        G = Generator(args.img_size, args.norm, args.up_type, device).to(device)
+        G.apply(weights_init)
+        
     D = Discriminator(args.img_size, args.norm, args.spectral, args.noise).to(device)
-    G.apply(weights_init)
     D.apply(weights_init)
     
     optimizerD = optim.Adam(D.parameters(), lr = args.D_lr, betas=(0.5, 0.999))

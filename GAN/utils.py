@@ -2,7 +2,7 @@ import torch
 import os
 
 def reparamaterize(mu : torch.Tensor, logvar: torch.Tensor) -> torch.Tensor:
-    std = torch.exp(0.5 * var)
+    std = torch.exp(0.5 * logvar)
     eps = torch.randn_like(std)
     return eps * std + mu
     

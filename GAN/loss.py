@@ -28,7 +28,7 @@ class Loss:
     def __call__(self, output, label):
         return self.loss(output, label)
 
-'''
+
 def VAELoss(recons : torch.Tensor,
             input : torch.Tensor,
             mu : torch.Tensor,
@@ -36,6 +36,4 @@ def VAELoss(recons : torch.Tensor,
             kld_weight = 1 : float):
     recons_loss = F.mse_loss(recons, input)
     kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim = 1), dim = 0)
-    loss = recons_loss + kld_weight * kld_loss
-    return loss
-'''
+    return recons_loss, kld_loss
