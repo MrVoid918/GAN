@@ -37,7 +37,7 @@ def train_VAE(img_size : int, norm : str, up : str, device : str,
             
             recons_loss, kld_loss = VAELoss(recon_img, img, mu, var)
             total_recon_loss += recons_loss
-            kld_loss += kld_loss
+            total_kld_loss += kld_loss
             loss = recons_loss + kld_loss
             
             loss.backward()
