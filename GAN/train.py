@@ -111,10 +111,10 @@ if __name__ == "__main__":
                            device, data_loader, args.G_lr, args.epoch)
                            
     else:
-        G = Generator(args.img_size, args.norm, args.up_type, device).to(device)
+        G = Generator(args.img_size, args.norm,  args.act, args.up_type, device).to(device)
         G.apply(weights_init)
         
-    D = Discriminator(args.img_size, args.norm, args.spectral, args.noise).to(device)
+    D = Discriminator(args.img_size, args.norm,  args.act, args.spectral, args.noise).to(device)
     D.apply(weights_init)
     
     optimizerD = optim.Adam(D.parameters(), lr = args.D_lr, betas=(0.5, 0.999))
