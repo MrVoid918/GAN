@@ -4,10 +4,11 @@ from norm import Norm
 from functools import partial
 from collections import OrderedDict
 from torch.nn.utils import spectral_norm
+from activation import Activation
 
 class Upsample_Block(nn.Module):
     
-    def __init__(self, in_features : int, norm : str):
+    def __init__(self, in_features : int, norm : str, act : str):
         
         super(Upsample_Block, self).__init__()
         self.upsample = nn.UpsamplingBilinear2d(scale_factor=2)
@@ -15,14 +16,14 @@ class Upsample_Block(nn.Module):
         self.conv = nn.Conv2d(in_features, in_features // 2, kernel_size = 3, 
                               stride = 1, padding = 0, bias = False)
         self.norm = Norm(norm, in_features // 2)
-        self.l_relu = nn.LeakyReLU()
+        self.act = Activation(act)
         
     def forward(self, x : torch.Tensor, latent : torch.Tensor):
         x = self.upsample(x)
         x = self.reflection(x)
         x = self.conv(x)
         x = self.norm(x, latent)    
-        x = self.l_relu(x)
+        x = self.act(x)
         
         return x
         
@@ -31,6 +32,7 @@ class ResBlock(nn.Module):
                  in_channels : int, 
                  upsample : bool,
                  norm : str,
+                 act : str,
                  hidden_channels=None,):
         super(ResBlock, self).__init__()
         #self.conv1 = SNConv2d(n_dim, n_out, kernel_size=3, stride=2)
@@ -43,7 +45,7 @@ class ResBlock(nn.Module):
         self.upsampling = nn.UpsamplingBilinear2d(scale_factor=2)
         self.norm1 = Norm(norm, in_channels)
         self.norm2 = Norm(norm, hidden_channels)
-        self.relu = nn.LeakyReLU()
+        self.act = Activation(act)
         
     def forward_residual_connect(self, input):
         out = self.conv_sc(input)
@@ -53,12 +55,12 @@ class ResBlock(nn.Module):
         return out
     
     def forward(self, input : torch.Tensor, latent : torch.Tensor):
-        out = self.relu(self.norm1(input, latent))
+        out = self.act(self.norm1(input, latent))
         out = self.conv1(out)
         if self.upsample:
              out = self.upsampling(out)
              #out = self.upconv1(out)
-        out = self.relu(self.norm2(out, latent))
+        out = self.act(self.norm2(out, latent))
         out = self.conv2(out)
         out_res = self.forward_residual_connect(input)
         return out + out_res
@@ -99,7 +101,7 @@ class DisBlock(nn.Module):
     noise_layer = {True : GaussianNoise(),
             False : nn.Identity()}
     
-    def __init__(self, in_features : int , norm : str,
+    def __init__(self, in_features : int , norm : str, act : str,
                     spectral : bool = True, noise : bool = True):
         
         super(DisBlock, self).__init__()
@@ -107,9 +109,9 @@ class DisBlock(nn.Module):
         
         self.dis_block = nn.Sequential(OrderedDict([
         ('conv', self.spectral(nn.Conv2d(in_features, in_features * 2, 4, 2, 1, bias = False))),
-        #('noise', DisBlock.noise_layer[noise]),
+        ('noise', DisBlock.noise_layer[noise]),
         ('norm', Norm(norm, in_features * 2)),
-        ('relu', nn.LeakyReLU())]
+        ('act', Activation(act))]
         ))
         
         

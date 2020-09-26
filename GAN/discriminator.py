@@ -3,10 +3,11 @@ import torch.nn as nn
 from norm import Norm
 from layer import DisBlock
 import numpy as np
+from activation import Activation
 
 class Discriminator(nn.Module):
     
-    def __init__(self, img_size : int, norm : str,
+    def __init__(self, img_size : int, norm : str, act : str,
                  spectral : bool = True, noise : bool = True):
                  
         super(Discriminator, self).__init__()
@@ -19,7 +20,7 @@ class Discriminator(nn.Module):
         self.num.reverse()
         
         
-        self.blocks = [DisBlock(x, norm, spectral, noise) for x in self.num]
+        self.blocks = [DisBlock(x, norm, act, spectral, noise) for x in self.num]
         
         self.net = nn.Sequential(*[nn.Conv2d(3, self.num[0], 4, 2, 1, bias = False),
                                    Norm(norm, self.num[0]),

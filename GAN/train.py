@@ -11,6 +11,7 @@ from norm import Norm
 from generator import Generator
 from discriminator import Discriminator
 from VAEtrain import train_VAE
+from activation import Activation
 
 def parse_args():
     parser = ArgumentParser(prog="GAN")
@@ -18,13 +19,14 @@ def parse_args():
     parser.add_argument("--img_dir", type=str, required=1, help="File Directory for Dataset")
     parser.add_argument("--img_size", type=int, default=128, help="Image Size")
     parser.add_argument("--batch_size", type = int, default=16, help="Batch Size")
-    parser.add_argument("--norm", type = str, default="BN", choices = Norm.norms.keys(), help="Norm Type")
+    parser.add_argument("-a", "--act", type = str, default="lrelu", choices = Activation.activations.keys(), help="Norm Type")
+    parser.add_argument("-n", "--norm", type = str, default="BN", choices = Norm.norms.keys(), help="Activation Type")
     parser.add_argument("--up_type", type = str, default="up", choices = ["up", "res"], help="Options for generator upsampling. up, res")
     parser.add_argument("--spectral", type = bool, default=1, help="Spectral Norm for Discriminator")
     parser.add_argument("--noise", type=bool, default=0, help="Gaussian Noise for Discriminator")
-    parser.add_argument("--loss", type=str, default="adv", choices = Loss.losses.keys(), help="Loss Function")
-    parser.add_argument("--device", type=str, default="cpu", choices = ["cpu", "gpu"], help="Device to run on. Defaults on cpu. gpu:0")
-    parser.add_argument("--epoch", type=int, default=100, help="Training epochs")
+    parser.add_argument("-l", "--loss", type=str, default="adv", choices = Loss.losses.keys(), help="Loss Function")
+    parser.add_argument("-d", "--device", type=str, default="cpu", choices = ["cpu", "gpu"], help="Device to run on. Defaults on cpu. gpu:0")
+    parser.add_argument("-e", "--epoch", type=int, default=100, help="Training epochs")
     parser.add_argument("--G_lr", type=float, default=0.0002, help="Generator Learning Rate")
     parser.add_argument("--D_lr", type=float, default=0.0002, help="Discriminator Learning Rate")
     parser.add_argument("-p", "--pretrain", type=bool, default=0, help="Pretrain with VAE")
@@ -85,9 +87,12 @@ def main(num_epoch : int, device : str, b_size : int, loss, G, D, optimizerG, op
                     % (epoch_, num_epoch, i, len(data_loader), loss_D.item(), loss_G.item())
                 )
                     
-            #if epoch_ % 50 == 0 and epoch_ != 0:
-                #save_state(save_dir, epoch_, G, D)
-            
+            if epoch_ % 50 == 0 and epoch_ != 0:
+                save_state(save_dir, epoch_, G, D)
+    
+    save_state(save_dir, num_epoch, G, D)
+                
+                
 if __name__ == "__main__":
     
     args = parse_args()

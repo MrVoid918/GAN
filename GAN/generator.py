@@ -4,13 +4,14 @@ from norm import Norm
 from functools import partial
 import torch
 import numpy as np
+from activation import Activation
 
 class Generator(nn.Module):
     
     blocks = {'up' : partial(Upsample_Block),
               'res' : partial(ResBlock, upsample = True)}
     
-    def __init__(self, img_size : int, norm : str, 
+    def __init__(self, img_size : int, norm : str, act : str,
                  up_type : str = 'up', device : str = 'cpu'):
         
         super(Generator, self).__init__()
@@ -21,19 +22,19 @@ class Generator(nn.Module):
             self.num.append(int(i))
             i /= 2.
             
-        self.blocks_ = [Generator.blocks[up_type](i, norm = norm).to(device) for i in self.num]
+        self.blocks_ = [Generator.blocks[up_type](i, norm = norm, act = act).to(device) for i in self.num]
         self.blocks_ = nn.ModuleList(self.blocks_)
         
         self.conv1 = nn.ConvTranspose2d(128, self.num[0], 4, 1, 0, bias=False)
         self.norm1 = Norm(norm, self.num[0])
-        self.relu = nn.ReLU()
+        self.act = Activation(act)
         self.conv_last = nn.ConvTranspose2d(self.num[-1] // 2, 3, 4, 2, 1, bias=False)
         self.tanh = nn.Tanh()
         
     def forward(self, latent : torch.Tensor):
         x = self.conv1(latent)
         x = self.norm1(x, latent)
-        x = self.relu(x)
+        x = self.act(x)
         for block in self.blocks_:
             x = block(x, latent)
         x = self.conv_last(x)

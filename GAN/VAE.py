@@ -1,12 +1,14 @@
 import torch
 import torch.nn as nn
 from norm import Norm
+from activation import Activation
 from layer import DisBlock
+
 import numpy as np
 
 class Encoder(nn.Module):
     
-    def __init__(self, img_size : int, norm : str,):
+    def __init__(self, img_size : int, norm : str = "BN" , act  : str = "lrelu"):
                  #spectral : bool = True, noise : bool = True):
                  
         super(Encoder, self).__init__()
@@ -18,8 +20,7 @@ class Encoder(nn.Module):
             i /= 2.
         self.num.reverse()
         
-        
-        self.blocks = [DisBlock(x, norm, 0, 0) for x in self.num]
+        self.blocks = [DisBlock(x, norm, act, 0, 0) for x in self.num]
         
         self.net = nn.Sequential(*[nn.Conv2d(3, self.num[0], 4, 2, 1, bias = False),
                                    Norm(norm, self.num[0]),
