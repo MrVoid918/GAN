@@ -5,11 +5,12 @@ from loss import VAELoss
 from init import weights_init
 from generator import Generator
 from VAE import Encoder
+from activation import Activation
 
-def train_VAE(img_size : int, norm : str, up : str, device : str,
+def train_VAE(img_size : int, norm : str, act : str, up : str, device : str,
               data_loader, lr : float, num_epoch : int):
     
-    dec = Generator(img_size, norm, up, device).to(device)
+    dec = Generator(img_size, norm, act, up, device).to(device)
     enc = Encoder(img_size, norm).to(device)
     
     enc.apply(weights_init)
