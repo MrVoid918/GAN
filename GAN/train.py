@@ -30,15 +30,14 @@ def parse_args():
     parser.add_argument("--G_lr", type=float, default=0.0002, help="Generator Learning Rate")
     parser.add_argument("--D_lr", type=float, default=0.0002, help="Discriminator Learning Rate")
     parser.add_argument("-p", "--pretrain", type=bool, default=0, help="Pretrain with VAE")
-    #arser.add_argument("--save_dir", type=str, required=1, help = "Directory for saved Model")
+    parser.add_argument("--save_dir", type=str, required=1, help = "Directory for saved Model")
 
     return parser.parse_args()
 
 
     
      
-def main(num_epoch : int, device : str, b_size : int, loss, G, D, optimizerG, optimizerD, data_loader):
-    #save_dir : str):   
+def main(num_epoch : int, device : str, b_size : int, loss, G, D, optimizerG, optimizerD, data_loader, save_dir : str):   
     print("Starting GAN training\n")   
     for epoch_ in range(num_epoch + 1):
         
@@ -123,5 +122,5 @@ if __name__ == "__main__":
     
     loss = Loss(args.loss)
     
-    main(args.epoch, device, args.batch_size, loss, G, D, optimizerG, optimizerD, data_loader)
+    main(args.epoch, device, args.batch_size, loss, G, D, optimizerG, optimizerD, data_loader, args.save_dir)
     
