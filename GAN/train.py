@@ -107,7 +107,7 @@ if __name__ == "__main__":
     data_loader = load_data(args.img_dir, args.img_size, args.batch_size)
     
     if args.pretrain:
-        G, dec = train_VAE(args.img_size, args.norm, args.act, args.up_type,
+        enc, G = train_VAE(args.img_size, args.norm, args.act, args.up_type,
                            device, data_loader, args.G_lr, args.epoch)
                            
     else:
