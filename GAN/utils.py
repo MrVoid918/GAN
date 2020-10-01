@@ -12,9 +12,9 @@ def save_state(save_dir : str, epoch : int, G, D):
     D_path = os.path.join(save_dir, "{}_D.pth".format(epoch))
     torch.save(G.state_dict(), G_path)
     torch.save(D.state_dict(), D_path)
-"""  
+'''    
 def load_state(model_dir = None : str):
     if model_dir:
         lis = glob.glob("./*.pth")
     
-"""
+  '''  

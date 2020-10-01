@@ -7,11 +7,18 @@ from generator import Generator
 from VAE import Encoder
 from activation import Activation
 
-def train_VAE(img_size : int, norm : str, act : str, up : str, device : str,
-              data_loader, lr : float, num_epoch : int):
+def train_VAE(img_size : int,
+              G_norm : str,
+              enc_norm : str,
+              act : str,
+              up : str,
+              device : str,
+              data_loader,
+              lr : float,
+              num_epoch : int):
     
-    dec = Generator(img_size, norm, act, up, device).to(device)
-    enc = Encoder(img_size, norm).to(device)
+    dec = Generator(img_size, G_norm, act, up, device).to(device)
+    enc = Encoder(img_size, enc_norm).to(device)
     
     enc.apply(weights_init)
     dec.apply(weights_init)

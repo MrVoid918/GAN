@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from argparse import ArgumentParser
+from parse import parse_args
 from utils import save_state
 from pathlib import Path
 from data import load_data
@@ -13,31 +14,17 @@ from discriminator import Discriminator
 from VAEtrain import train_VAE
 from activation import Activation
 
-def parse_args():
-    parser = ArgumentParser(prog="GAN")
-
-    parser.add_argument("--img_dir", type=str, required=1, help="File Directory for Dataset")
-    parser.add_argument("--img_size", type=int, default=128, help="Image Size")
-    parser.add_argument("--batch_size", type = int, default=16, help="Batch Size")
-    parser.add_argument("-a", "--act", type = str, default="lrelu", choices = Activation.activations.keys(), help="Norm Type")
-    parser.add_argument("-n", "--norm", type = str, default="BN", choices = Norm.norms.keys(), help="Activation Type")
-    parser.add_argument("--up_type", type = str, default="up", choices = ["up", "res"], help="Options for generator upsampling. up, res")
-    parser.add_argument("--spectral", type = bool, default=1, help="Spectral Norm for Discriminator")
-    parser.add_argument("--noise", type=bool, default=0, help="Gaussian Noise for Discriminator")
-    parser.add_argument("-l", "--loss", type=str, default="adv", choices = Loss.losses.keys(), help="Loss Function")
-    parser.add_argument("-d", "--device", type=str, default="cpu", choices = ["cpu", "gpu"], help="Device to run on. Defaults on cpu. gpu:0")
-    parser.add_argument("-e", "--epoch", type=int, default=100, help="Training epochs")
-    parser.add_argument("--G_lr", type=float, default=0.0002, help="Generator Learning Rate")
-    parser.add_argument("--D_lr", type=float, default=0.0002, help="Discriminator Learning Rate")
-    parser.add_argument("-p", "--pretrain", type=bool, default=0, help="Pretrain with VAE")
-    parser.add_argument("--save_dir", type=str, required=1, help = "Directory for saved Model")
-
-    return parser.parse_args()
-
-
-    
-     
-def main(num_epoch : int, device : str, b_size : int, loss, G, D, optimizerG, optimizerD, data_loader, save_dir : str):   
+def main(num_epoch : int,
+         device : str,
+         b_size : int,
+         loss,
+         G,
+         D,
+         optimizerG,
+         optimizerD,
+         data_loader,
+         save_dir : str):
+         
     print("Starting GAN training\n")   
     for epoch_ in range(num_epoch + 1):
         
@@ -90,7 +77,7 @@ def main(num_epoch : int, device : str, b_size : int, loss, G, D, optimizerG, op
                 save_state(save_dir, epoch_, G, D)
     
     save_state(save_dir, num_epoch, G, D)
-                
+
                 
 if __name__ == "__main__":
     
@@ -107,14 +94,29 @@ if __name__ == "__main__":
     data_loader = load_data(args.img_dir, args.img_size, args.batch_size)
     
     if args.pretrain:
-        enc, G = train_VAE(args.img_size, args.norm, args.act, args.up_type,
-                           device, data_loader, args.G_lr, args.epoch)
+        enc, G = train_VAE(args.img_size, 
+                           args.G_norm,
+                           args.D_norm,
+                           args.act,
+                           args.up_type,
+                           device,
+                           data_loader,
+                           args.G_lr,
+                           args.epoch)
+    
+        save_state(args.save_dir, args.epoch, G, enc)
                            
     else:
-        G = Generator(args.img_size, args.norm, args.act, args.up_type, device).to(device)
+        G = Generator(args.img_size, args.G_norm, args.act, args.up_type, device).to(device)
         G.apply(weights_init)
         
-    D = Discriminator(args.img_size, args.norm, args.act, args.spectral, args.noise).to(device)
+    D = Discriminator(args.img_size,
+                      args.D_norm,
+                      args.act,
+                      args.spectral,
+                      args.noise,
+                      args.dropout).to(device)
+                      
     D.apply(weights_init)
     
     optimizerD = optim.Adam(D.parameters(), lr = args.D_lr, betas=(0.5, 0.999))
@@ -123,4 +125,3 @@ if __name__ == "__main__":
     loss = Loss(args.loss)
     
     main(args.epoch, device, args.batch_size, loss, G, D, optimizerG, optimizerD, data_loader, args.save_dir)
-    

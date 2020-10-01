@@ -23,7 +23,22 @@ class SelfModulationBN2D(nn.Module):
         bias = self.BMLP(latent.reshape(minibatch, -1))
         bias = F.leaky_relu(bias).expand(minibatch, self.in_features)[:, :, None, None]
         x = weight * self.norm(x) + bias
-        return(x) 
+        return(x)
+    
+class PixelNormLayer(nn.Module):
+    #https://github.com/github-pengge/PyTorch-progressive_growing_of_gans/blob/master/models/base_model.py
+    """
+    Pixelwise feature vector normalization.
+    """
+    def __init__(self, eps=1e-8):
+        super(PixelNormLayer, self).__init__()
+        self.eps = eps
+    
+    def forward(self, x):
+        return x / torch.sqrt(torch.mean(x ** 2, dim=1, keepdim=True) + 1e-8)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(eps = %s)' % (self.eps)
 
 class Norm(nn.Module):
     
@@ -31,7 +46,9 @@ class Norm(nn.Module):
              'IN': partial(nn.InstanceNorm2d),
              #'SN': partial(SwitchNorm2d),
              'SMBN' : partial(SelfModulationBN2D),
-             'None': nn.Identity}
+             'PN' : partial(PixelNormLayer),
+             'None': nn.Identity,
+             }
     
     def __init__(self, norm : str, in_features : int, latent_size : int = 128):
         super(Norm, self).__init__()
@@ -48,3 +65,6 @@ class Norm(nn.Module):
             return self.norm_layer(x, latent)   #Ugly bypass to check if norm is dependent on latent
         else:
             return self.norm_layer(x)
+        
+    def __repr__(self):
+        return self.norm_layer.__class__.__name__ + '(in_f = %s)' % (self.in_features)

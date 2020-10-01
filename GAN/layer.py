@@ -13,6 +13,7 @@ class Upsample_Block(nn.Module):
         super(Upsample_Block, self).__init__()
         self.upsample = nn.UpsamplingBilinear2d(scale_factor=2)
         self.reflection = nn.ReflectionPad2d(1)
+        
         self.conv = nn.Conv2d(in_features, in_features // 2, kernel_size = 3, 
                               stride = 1, padding = 0, bias = False)
         self.norm = Norm(norm, in_features // 2)
@@ -27,12 +28,29 @@ class Upsample_Block(nn.Module):
         
         return x
         
+class Deconv_Block(nn.Module):
+    
+    def __init__(self, in_features : int, norm : str, act : str):
+        
+        super(Deconv_Block, self).__init__()
+        
+        self.deconv = nn.ConvTranspose2d(in_features, in_features // 2, 4, 2, 1, bias=False)
+        self.norm = Norm(norm, in_features // 2)
+        self.act = Activation(act)
+        
+    def forward(self, x : torch.Tensor, latent : torch.Tensor):
+        x = self.deconv(x)
+        x = self.norm(x, latent)
+        x = self.act(x)
+        
+        return x
+        
 class ResBlock(nn.Module):
     def __init__(self,
                  in_channels : int, 
-                 upsample : bool,
                  norm : str,
                  act : str,
+                 upsample : bool,
                  hidden_channels=None,):
         super(ResBlock, self).__init__()
         #self.conv1 = SNConv2d(n_dim, n_out, kernel_size=3, stride=2)
@@ -90,19 +108,23 @@ class GaussianNoise(nn.Module):
             sampled_noise = self.noise.expand(*x.size()).float().normal_() * scale
             x = x + sampled_noise
         return x 
-
         
 
 class DisBlock(nn.Module):
     
     spectral_layer = {True : partial(spectral_norm),
-                False : nn.Identity()}
+                      False : nn.Identity()}
                 
     noise_layer = {True : GaussianNoise(),
-            False : nn.Identity()}
+                   False : nn.Identity()}
     
-    def __init__(self, in_features : int , norm : str, act : str,
-                    spectral : bool = True, noise : bool = True):
+    def __init__(self,
+                 in_features : int ,
+                 norm : str,
+                 act : str,
+                 spectral : bool = True,
+                 noise : bool = True,
+                 dropout : float = 0.):
         
         super(DisBlock, self).__init__()
         self.spectral = DisBlock.spectral_layer[spectral]
@@ -111,9 +133,10 @@ class DisBlock(nn.Module):
         ('conv', self.spectral(nn.Conv2d(in_features, in_features * 2, 4, 2, 1, bias = False))),
         ('noise', DisBlock.noise_layer[noise]),
         ('norm', Norm(norm, in_features * 2)),
-        ('act', Activation(act))]
+        ('act', Activation(act)),
+        ('dropout', nn.Dropout2d(dropout))]
         ))
         
         
-    def forward(self, x):
+    def forward(self, x : torch.Tensor):
         return (self.dis_block(x))

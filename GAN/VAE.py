@@ -20,7 +20,7 @@ class Encoder(nn.Module):
             i /= 2.
         self.num.reverse()
         
-        self.blocks = [DisBlock(x, norm, act, 0, 0) for x in self.num]
+        self.blocks = [DisBlock(x, norm, act, 0, 0, 0) for x in self.num]
         
         self.net = nn.Sequential(*[nn.Conv2d(3, self.num[0], 4, 2, 1, bias = False),
                                    Norm(norm, self.num[0]),

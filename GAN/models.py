@@ -36,17 +36,27 @@ class deconv_block(nn.Module):
     
 class upsample_block(nn.Module):
     
-    def __init__(self, in_f, activation = nn.ReLU(inplace = True), norm = 'BN'):
+    def __init__(self, 
+                 in_f : int,
+                 activation = nn.ReLU(inplace = True),
+                 norm = 'BN',
+                 spectral : bool):
+                 
         super().__init__()
         
         if norm not in norms.keys():
             raise NotImplementedError('normalization layer is not found')
+            
+        if spectral:
+            self.spec = partial(spectral_norm)
+        else:
+            self.spec = partial(nn.Identity)
        
         self.norm_ = norm
         self.block = nn.Sequential(OrderedDict([
             ("upsample", nn.Upsample(scale_factor = 2)),
             ("reflection", nn.ReflectionPad2d(1)),
-            ("conv", nn.Conv2d(in_f, in_f // 2, kernel_size = 3, stride = 1, padding = 0, bias = False))]))
+            ("conv", self.spec(nn.Conv2d(in_f, in_f // 2, kernel_size = 3, stride = 1, padding = 0, bias = False))])))
         self.norm = norms[norm](in_f // 2)
         self.non_linear = activation
         

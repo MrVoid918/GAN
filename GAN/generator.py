@@ -1,14 +1,17 @@
 import torch.nn as nn
-from layer import Upsample_Block, ResBlock
+from layer import Upsample_Block, ResBlock, Deconv_Block
 from norm import Norm
 from functools import partial
 import torch
 import numpy as np
 from activation import Activation
+import matplotlib.pyplot as plt
+from json import JSONEncoder
 
 class Generator(nn.Module):
     
     blocks = {'up' : partial(Upsample_Block),
+              'deconv' : partial(Deconv_Block),
               'res' : partial(ResBlock, upsample = True)}
     
     def __init__(self, img_size : int, norm : str, act : str,
@@ -22,6 +25,11 @@ class Generator(nn.Module):
             self.num.append(int(i))
             i /= 2.
             
+        self.img_size = img_size
+        self.norm = norm
+        self.act = act
+        self.up_type = up_type
+        self.device = device
         self.blocks_ = [Generator.blocks[up_type](i, norm = norm, act = act).to(device) for i in self.num]
         self.blocks_ = nn.ModuleList(self.blocks_)
         
@@ -31,6 +39,13 @@ class Generator(nn.Module):
         self.conv_last = nn.ConvTranspose2d(self.num[-1] // 2, 3, 4, 2, 1, bias=False)
         self.tanh = nn.Tanh()
         
+    def as_dict(self):
+        return {"img_size": self.img_size,
+                    "norm": self.norm,
+                    "act": self.act,
+                    "up_type": self.up_type,
+                    "device": self.device}
+        
     def forward(self, latent : torch.Tensor):
         x = self.conv1(latent)
         x = self.norm1(x, latent)
@@ -39,3 +54,7 @@ class Generator(nn.Module):
             x = block(x, latent)
         x = self.conv_last(x)
         return self.tanh(x)
+    
+class ModelEncoder(JSONEncoder):
+    def default(self, o):
+        return o.as_dict()

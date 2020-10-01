@@ -2,9 +2,9 @@ import torch.nn as nn
 
 class Activation(nn.Module):
     
-    activations = nn.ModuleDict([['relu', nn.ReLU()],
-                                 ['lrelu', nn.LeakyReLU()],
-                                 ['selu', nn.SELU()]])
+    activations = nn.ModuleDict([['relu', nn.ReLU(inplace = True)],
+                                 ['lrelu', nn.LeakyReLU(0.2, inplace = True)],
+                                 ['selu', nn.SELU(inplace = True)]])
                                  
     def __init__(self, act : str):
         
@@ -17,3 +17,6 @@ class Activation(nn.Module):
         
     def forward(self, x):
         return self.activation(x)
+    
+    def __repr__(self):
+        return self.activation.__class__.__name__
