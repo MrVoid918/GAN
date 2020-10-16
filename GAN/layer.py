@@ -19,7 +19,7 @@ class Upsample_Block(nn.Module):
                  ):
         
         super(Upsample_Block, self).__init__()
-        self.upsample = nn.Upsample(scale_factor=2, mode='bilinear')
+        self.upsample = nn.Upsample(scale_factor=2, mode='bicubic')
         self.reflection = nn.ReflectionPad2d(1)
         self.spectral = Upsample_Block.spectral_layer[spectral]
         

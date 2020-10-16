@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from argparse import ArgumentParser
 from parse import parse_args
-from utils import save_state, save_images
+from utils import save_state, save_images, gradient_penalty
 from pathlib import Path
 from data import load_data
 from init import weights_init
@@ -18,6 +18,7 @@ def train(num_epoch : int,
          device : str,
          b_size : int,
          loss,
+         gradient_p : bool,
          G,
          D,
          optimizerG,
@@ -56,7 +57,13 @@ def train(num_epoch : int,
                 loss_D_fake.backward()
                 D_G_z1 = output.mean().item()
                 # Add the gradients from the all-real and all-fake batches
-                loss_D = loss_D_real + loss_D_fake
+                if gradient_p:
+                    gp = gradient_penalty(real_img, D, device)
+                    gp.backward()
+                else:
+                    gp = 0
+                    
+                loss_D = loss_D_real + loss_D_fake + gp
                 # Update D
                 optimizerD.step()
                 
@@ -134,6 +141,7 @@ if __name__ == "__main__":
           device,
           args.batch_size,
           loss,
+          args.gradient_penalty,
           G, D,
           optimizerG,
           optimizerD,

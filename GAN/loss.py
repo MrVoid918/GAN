@@ -38,7 +38,20 @@ def VAELoss(recons : torch.Tensor,
             log_var : torch.Tensor,
             kld_weight : float = 1.,
             loss : str = 'MSE'):
-    
+            
+    def _logcosh(recon, _input, alpha = 100):
+        t = recon - _input
+        recons_loss = alpha * t + \
+                      torch.log(1. + torch.exp(- 2 * alpha * t)) - \
+                      torch.log(torch.tensor(2.0))
+        recons_loss = (1. / alpha) * recons_loss.mean()
+        return recons_loss
+        
+    def _ms_ssim(recon, _input):
+        recon = (recon + 1) / 2
+        _input = (_input + 1) / 2
+        return ms_ssim(recon, _input, data_range = 1, size_average = 1)
+        
     losses = {'MSE': partial(F.mse_loss),
               'logcosh' : partial(_logcosh),
               'MS-SSIM': partial(_ms_ssim)}
@@ -49,17 +62,3 @@ def VAELoss(recons : torch.Tensor,
     recons_loss = losses[loss](recons, _input)
     kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim = 1), dim = 0)
     return recons_loss, kld_loss
-
-def _ms_ssim(recon, _input):
-    recon = (recon + 1) / 2
-    _input = (_input + 1) / 2
-    return ms_ssim(recon, _input, data_range = 1, size_average = 1)
-    
-def _logcosh(recon, _input, alpha = 100):
-    t = recon - _input
-    recons_loss = alpha * t + \
-                  torch.log(1. + torch.exp(- 2 * alpha * t)) - \
-                  torch.log(torch.tensor(2.0))
-    recons_loss = (1. / alpha) * recons_loss.mean()
-    
-    return recons_loss

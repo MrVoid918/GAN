@@ -107,6 +107,11 @@ def parse_args():
                         type=float,
                         default=0.,
                         help="Dropout in Discriminator. Between 0 and 1")
+    
+    parser.add_argument("-gp", "--gradient_penalty",
+                        type=bool,
+                        default=0,
+                        help="Applies DRAGAN gradient penalty")
                         
     parser.add_argument("-vl", "--vae_loss",
                         type=str,

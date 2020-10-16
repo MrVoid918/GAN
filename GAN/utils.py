@@ -7,6 +7,7 @@ import matplotlib.animation as animation
 import numpy as np
 from IPython.core.interactiveshell import InteractiveShell
 from IPython import display
+from torch.autograd import Variable, grad
 
 def reparamaterize(mu : torch.Tensor, logvar: torch.Tensor) -> torch.Tensor:
     std = torch.exp(0.5 * logvar)
@@ -38,3 +39,18 @@ def show_images(img):
     plt.close(ani._fig)
     with open("results.gif",'rb') as f:
         display.Image(data=f.read(), format='png')
+        
+def gradient_penalty(image_data, discriminator, device, lambda_ = 10.):
+    #image to get dimensions
+    #https://github.com/jfsantos/dragan-pytorch/blob/master/dragan.py
+    image = image_data
+    image.requires_grad = True
+    batch_size = image.shape[0]
+    alpha = torch.randn(image.size()).to(device)
+    x_hat = alpha * image + (1 - alpha) * (image + 0.5 * image.std() * torch.rand(image.size()).to(device))
+    pred_hat = discriminator(x_hat)
+    gradients = grad(outputs=pred_hat, inputs=x_hat, grad_outputs=torch.ones(pred_hat.size()).to(device),
+                    create_graph=True, retain_graph=True, only_inputs=True)[0]
+    gradient_penalty = lambda_ * ((gradients.norm(2, dim=1) - 1) ** 2).mean()
+    
+    return gradient_penalty
