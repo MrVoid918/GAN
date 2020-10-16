@@ -8,14 +8,23 @@ from activation import Activation
 
 class Upsample_Block(nn.Module):
     
-    def __init__(self, in_features : int, norm : str, act : str):
+    spectral_layer = {True : partial(spectral_norm),
+                      False : nn.Identity()}
+    
+    def __init__(self, 
+                 in_features : int,
+                 norm : str,
+                 act : str,
+                 spectral : bool
+                 ):
         
         super(Upsample_Block, self).__init__()
-        self.upsample = nn.UpsamplingBilinear2d(scale_factor=2)
+        self.upsample = nn.Upsample(scale_factor=2, mode='bilinear')
         self.reflection = nn.ReflectionPad2d(1)
+        self.spectral = Upsample_Block.spectral_layer[spectral]
         
-        self.conv = nn.Conv2d(in_features, in_features // 2, kernel_size = 3, 
-                              stride = 1, padding = 0, bias = False)
+        self.conv = self.spectral(nn.Conv2d(in_features, in_features // 2, kernel_size = 3, 
+                                  stride = 1, padding = 0, bias = False))
         self.norm = Norm(norm, in_features // 2)
         self.act = Activation(act)
         
@@ -30,11 +39,21 @@ class Upsample_Block(nn.Module):
         
 class Deconv_Block(nn.Module):
     
-    def __init__(self, in_features : int, norm : str, act : str):
+    spectral_layer = {True : partial(spectral_norm),
+                      False : nn.Identity()}    
+    
+    def __init__(self,
+                 in_features : int,
+                 norm : str,
+                 act : str,
+                 spectral : bool):
         
         super(Deconv_Block, self).__init__()
         
-        self.deconv = nn.ConvTranspose2d(in_features, in_features // 2, 4, 2, 1, bias=False)
+        self.spectral = Deconv_Block.spectral_layer[spectral]
+        
+        self.deconv = self.spectral(
+                      nn.ConvTranspose2d(in_features, in_features // 2, 4, 2, 1, bias=False))
         self.norm = Norm(norm, in_features // 2)
         self.act = Activation(act)
         
@@ -46,20 +65,30 @@ class Deconv_Block(nn.Module):
         return x
         
 class ResBlock(nn.Module):
+    
+    spectral_layer = {True : partial(spectral_norm),
+                      False : nn.Identity()}  
+    
     def __init__(self,
                  in_channels : int, 
                  norm : str,
                  act : str,
-                 upsample : bool,
+                 spectral : bool,
+                 upsample : bool,         
                  hidden_channels=None,):
+                 
         super(ResBlock, self).__init__()
         #self.conv1 = SNConv2d(n_dim, n_out, kernel_size=3, stride=2)
         hidden_channels = in_channels
+        self.spectral = ResBlock.spectral_layer[spectral]
         self.upsample = upsample
         self.out_channels = in_channels // 2
-        self.conv1 = nn.Conv2d(in_channels, hidden_channels, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(hidden_channels, self.out_channels, kernel_size=3, padding=1)
-        self.conv_sc = nn.Conv2d(in_channels, self.out_channels, kernel_size=1, padding=0)
+        self.conv1 = self.spectral(
+                     nn.Conv2d(in_channels, hidden_channels, kernel_size=3, padding=1))
+        self.conv2 = self.spectral(
+                     nn.Conv2d(hidden_channels, self.out_channels, kernel_size=3, padding=1))
+        self.conv_sc = self.spectral(
+                     nn.Conv2d(in_channels, self.out_channels, kernel_size=1, padding=0))
         self.upsampling = nn.UpsamplingBilinear2d(scale_factor=2)
         self.norm1 = Norm(norm, in_channels)
         self.norm2 = Norm(norm, hidden_channels)

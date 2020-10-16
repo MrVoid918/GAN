@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 from norm import Norm
 from activation import Activation
 import argparse
-from loss import Loss
+from loss import Loss, VAELoss
 
 class RawTextArgumentDefaultsHelpFormatter(
         argparse.ArgumentDefaultsHelpFormatter,
@@ -55,10 +55,15 @@ def parse_args():
                         default="up",
                         choices = ["up", "res", "deconv"],
                         help="Options for generator upsampling. up, res")
-                        
-    parser.add_argument("-sp", "--spectral",
+    
+    parser.add_argument("-G_sp", "--Gen_spectral",
                         type = bool,
                         default=1,
+                        help="Spectral Norm for Generator")
+
+    parser.add_argument("-D_sp", "--Dis_spectral",
+                        type = bool,
+                        default=0,
                         help="Spectral Norm for Discriminator")
                         
     parser.add_argument("--noise",
@@ -102,5 +107,13 @@ def parse_args():
                         type=float,
                         default=0.,
                         help="Dropout in Discriminator. Between 0 and 1")
+                        
+    parser.add_argument("-vl", "--vae_loss",
+                        type=str,
+                        default='MSE',
+                        choices = ['MSE', 'logcosh', 'MS-SSIM'],
+                        help="Per pixel loss for VAE")
+                        
+                        
 
     return parser.parse_args()

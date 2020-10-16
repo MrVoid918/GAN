@@ -14,8 +14,14 @@ class Generator(nn.Module):
               'deconv' : partial(Deconv_Block),
               'res' : partial(ResBlock, upsample = True)}
     
-    def __init__(self, img_size : int, norm : str, act : str,
-                 up_type : str = 'up', device : str = 'cpu'):
+    def __init__(self,
+                 img_size : int,
+                 norm : str,
+                 act : str,
+                 spectral : bool,
+                 up_type : str = 'up',
+                 device : str = 'cpu',
+                 ):
         
         super(Generator, self).__init__()
         
@@ -30,7 +36,11 @@ class Generator(nn.Module):
         self.act = act
         self.up_type = up_type
         self.device = device
-        self.blocks_ = [Generator.blocks[up_type](i, norm = norm, act = act).to(device) for i in self.num]
+        self.blocks_ = [Generator.blocks[up_type](i,
+                                                  norm = norm,
+                                                  act = act,
+                                                  spectral = spectral).to(device) 
+                                                  for i in self.num]
         self.blocks_ = nn.ModuleList(self.blocks_)
         
         self.conv1 = nn.ConvTranspose2d(128, self.num[0], 4, 1, 0, bias=False)

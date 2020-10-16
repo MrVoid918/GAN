@@ -7,21 +7,20 @@ from generator import Generator
 from VAE import Encoder
 from activation import Activation
 
-def train_VAE(img_size : int,
-              G_norm : str,
+def train_VAE(generator : Generator,
+              img_size : int,              
               enc_norm : str,
-              act : str,
-              up : str,
+              act : str,              
               device : str,
               data_loader,
               lr : float,
-              num_epoch : int):
-    
-    dec = Generator(img_size, G_norm, act, up, device).to(device)
-    enc = Encoder(img_size, enc_norm).to(device)
+              num_epoch : int,
+              losstype : str = 'MSE'):
+              
+    dec = generator
+    enc = Encoder(img_size, enc_norm, act).to(device)
     
     enc.apply(weights_init)
-    dec.apply(weights_init)
     
     enc_optimizer = optim.Adam(enc.parameters(), lr = lr, betas=(0.5, 0.999))
     dec_optimizer = optim.Adam(dec.parameters(), lr = lr, betas=(0.5, 0.999))
@@ -43,12 +42,12 @@ def train_VAE(img_size : int,
             z = reparamaterize(mu, var).view(bs, -1, 1, 1)
             recon_img = dec(z)
             
-            recons_loss, kld_loss = VAELoss(recon_img, img, mu, var)
+            recons_loss, kld_loss = VAELoss(recon_img, img, mu, var, loss = losstype)
             total_recon_loss += recons_loss
             total_kld_loss += kld_loss
             loss = recons_loss + kld_loss
             
-            loss.backward()
+            loss.backward(retain_graph = True)
             enc_optimizer.step()
             dec_optimizer.step()
         

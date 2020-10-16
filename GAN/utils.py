@@ -1,6 +1,12 @@
 import torch
 import os
 import glob
+import torchvision.utils as vutils
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import numpy as np
+from IPython.core.interactiveshell import InteractiveShell
+from IPython import display
 
 def reparamaterize(mu : torch.Tensor, logvar: torch.Tensor) -> torch.Tensor:
     std = torch.exp(0.5 * logvar)
@@ -12,9 +18,23 @@ def save_state(save_dir : str, epoch : int, G, D):
     D_path = os.path.join(save_dir, "{}_D.pth".format(epoch))
     torch.save(G.state_dict(), G_path)
     torch.save(D.state_dict(), D_path)
-'''    
-def load_state(model_dir = None : str):
-    if model_dir:
-        lis = glob.glob("./*.pth")
+
+def save_images(tensor, Generator, img):
+    with torch.no_grad():
+        fake = Generator(tensor).detach().cpu()
+        img.append(vutils.make_grid(fake, padding=2, normalize=True))
+        
+def show_images(img):
+    InteractiveShell.ast_node_interactivity = "all"
     
-  '''  
+    fig = plt.figure(figsize=(8,8))
+    plt.axis("off")
+    ims = [[plt.imshow(np.transpose(i,(1,2,0)), animated=True)] for i in img]
+    ani = animation.ArtistAnimation(fig, ims, interval=100, repeat_delay=1000, blit=True)
+
+    writer = animation.PillowWriter(fps = 25)
+    ani.save("results.gif", writer = writer)
+    
+    plt.close(ani._fig)
+    with open("results.gif",'rb') as f:
+        display.Image(data=f.read(), format='png')

@@ -39,10 +39,14 @@ def VAELoss(recons : torch.Tensor,
             kld_weight : float = 1.,
             loss : str = 'MSE'):
     
-    _recons_loss = {'MSE': partial(F.mse_loss),
-                    'MS-SSIM': partial(_ms_ssim)} 
+    losses = {'MSE': partial(F.mse_loss),
+              'logcosh' : partial(_logcosh),
+              'MS-SSIM': partial(_ms_ssim)}
+    
+    if loss not in losses.keys():
+        raise NotImplementedError("Loss function isn't defined")
             
-    recons_loss = F.mse_loss(recons, _input)
+    recons_loss = losses[loss](recons, _input)
     kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim = 1), dim = 0)
     return recons_loss, kld_loss
 
@@ -50,3 +54,12 @@ def _ms_ssim(recon, _input):
     recon = (recon + 1) / 2
     _input = (_input + 1) / 2
     return ms_ssim(recon, _input, data_range = 1, size_average = 1)
+    
+def _logcosh(recon, _input, alpha = 100):
+    t = recon - _input
+    recons_loss = alpha * t + \
+                  torch.log(1. + torch.exp(- 2 * alpha * t)) - \
+                  torch.log(torch.tensor(2.0))
+    recons_loss = (1. / alpha) * recons_loss.mean()
+    
+    return recons_loss
